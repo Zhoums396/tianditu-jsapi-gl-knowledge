@@ -73,8 +73,7 @@ map.on("load", function() {
         source: "cluster-source",
         filter: ["has", "point_count"],
         layout: {
-            "text-field": "{point_count_abbreviated}",
-            "text-size": 12
+            "text-field": "{point_count_abbreviated}",            "text-font": ["Microsoft YaHei"],            "text-size": 12
         },
         paint: {
             "text-color": "#ffffff"
