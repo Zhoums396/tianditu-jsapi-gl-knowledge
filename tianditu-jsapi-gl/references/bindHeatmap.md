@@ -2,13 +2,40 @@
 
 基于点数据密度生成热力图可视化。
 
-## 快速开始
+## 快速开始（使用内联示例数据）
+
+当没有用户上传的数据时，使用以下模板生成带有模拟示例数据的完整代码：
 
 ```javascript
 map.on("load", function() {
+    // 示例数据：北京市周边的随机点位
+    var sampleData = {
+        type: "FeatureCollection",
+        features: []
+    };
+    
+    // 生成随机点位数据（以北京为中心）
+    var centerLng = 116.40;
+    var centerLat = 39.90;
+    for (var i = 0; i < 200; i++) {
+        sampleData.features.push({
+            type: "Feature",
+            geometry: {
+                type: "Point",
+                coordinates: [
+                    centerLng + (Math.random() - 0.5) * 0.3,
+                    centerLat + (Math.random() - 0.5) * 0.3
+                ]
+            },
+            properties: {
+                weight: Math.random() * 10
+            }
+        });
+    }
+    
     map.addSource("heatmap-source", {
         type: "geojson",
-        data: "points.geojson"
+        data: sampleData
     });
 
     map.addLayer({
@@ -16,8 +43,19 @@ map.on("load", function() {
         type: "heatmap",
         source: "heatmap-source",
         paint: {
-            "heatmap-radius": 20,
-            "heatmap-opacity": 0.8
+            "heatmap-radius": 25,
+            "heatmap-opacity": 0.8,
+            "heatmap-color": [
+                "interpolate",
+                ["linear"],
+                ["heatmap-density"],
+                0, "rgba(33,102,172,0)",
+                0.2, "rgb(103,169,207)",
+                0.4, "rgb(209,229,240)",
+                0.6, "rgb(253,219,199)",
+                0.8, "rgb(239,138,98)",
+                1, "rgb(178,24,43)"
+            ]
         }
     });
 });

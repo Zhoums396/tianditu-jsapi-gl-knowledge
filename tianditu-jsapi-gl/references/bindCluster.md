@@ -2,31 +2,71 @@
 
 将密集的点数据自动聚合，提升可视化效果和性能。
 
-## 快速开始
+## 快速开始（使用内联示例数据）
+
+当没有用户上传的数据时，使用以下模板生成带有模拟示例数据的完整代码：
 
 ```javascript
 map.on("load", function() {
+    // 示例数据：北京市周边的随机点位
+    var sampleData = {
+        type: "FeatureCollection",
+        features: []
+    };
+    
+    // 生成随机点位数据（以北京为中心，100个点）
+    var centerLng = 116.40;
+    var centerLat = 39.90;
+    for (var i = 0; i < 100; i++) {
+        sampleData.features.push({
+            type: "Feature",
+            geometry: {
+                type: "Point",
+                coordinates: [
+                    centerLng + (Math.random() - 0.5) * 0.5,
+                    centerLat + (Math.random() - 0.5) * 0.5
+                ]
+            },
+            properties: {
+                name: "点位 " + (i + 1),
+                category: ["餐饮", "酒店", "景点", "学校"][Math.floor(Math.random() * 4)]
+            }
+        });
+    }
+    
     map.addSource("cluster-source", {
         type: "geojson",
-        data: "points.geojson",
+        data: sampleData,
         cluster: true,
         clusterMaxZoom: 14,
         clusterRadius: 50
     });
 
-    // 聚合点
+    // 聚合点（分级颜色）
     map.addLayer({
         id: "clusters",
         type: "circle",
         source: "cluster-source",
         filter: ["has", "point_count"],
         paint: {
-            "circle-color": "#51bbd6",
-            "circle-radius": 20
+            "circle-color": [
+                "step",
+                ["get", "point_count"],
+                "#51bbd6",   // < 10
+                10, "#f1f075", // 10-30
+                30, "#f28cb1"  // >= 30
+            ],
+            "circle-radius": [
+                "step",
+                ["get", "point_count"],
+                15,     // < 10
+                10, 20, // 10-30
+                30, 25  // >= 30
+            ]
         }
     });
 
-    // 聚合数量
+    // 聚合数量标签
     map.addLayer({
         id: "cluster-count",
         type: "symbol",
@@ -35,6 +75,9 @@ map.on("load", function() {
         layout: {
             "text-field": "{point_count_abbreviated}",
             "text-size": 12
+        },
+        paint: {
+            "text-color": "#ffffff"
         }
     });
 
@@ -46,9 +89,23 @@ map.on("load", function() {
         filter: ["!", ["has", "point_count"]],
         paint: {
             "circle-color": "#11b4da",
-            "circle-radius": 6
+            "circle-radius": 6,
+            "circle-stroke-width": 1,
+            "circle-stroke-color": "#ffffff"
         }
     });
+
+    // 点击聚合点展开
+    map.on("click", "clusters", async function(e) {
+        var features = map.queryRenderedFeatures(e.point, { layers: ["clusters"] });
+        var clusterId = features[0].properties.cluster_id;
+        var zoom = await map.getSource("cluster-source").getClusterExpansionZoom(clusterId);
+        map.flyTo({ center: features[0].geometry.coordinates, zoom: zoom });
+    });
+
+    // 鼠标样式
+    map.on("mouseenter", "clusters", function() { map.getCanvas().style.cursor = "pointer"; });
+    map.on("mouseleave", "clusters", function() { map.getCanvas().style.cursor = ""; });
 });
 ```
 
